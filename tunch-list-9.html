@@ -1,0 +1,847 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Tunch List</title>
+<style>
+  :root{
+    --bg: #ffffff;
+    --bg-deep: #f3f1ec;
+    --panel: #faf9f6;
+    --panel-raised: #f0eee8;
+    --line: #e3dfd5;
+    --line-soft: #ece9e1;
+    --ivory: #2a2620;
+    --ivory-dim: #5c5648;
+    --ivory-faint: #8a8372;
+    --brass: #9c7a32;
+    --brass-bright: #b8923f;
+    --brass-deep: #7a5f26;
+    --stamp: #9c7a32;
+    --ok: #4a7d4f;
+    --danger: #a8412f;
+    --radius: 14px;
+    --serif: 'Iowan Old Style', 'Palatino Linotype', Palatino, Georgia, 'Times New Roman', serif;
+    --sans: 'Segoe UI', system-ui, -apple-system, Roboto, sans-serif;
+    --mono: 'SF Mono', 'Cascadia Code', 'Consolas', monospace;
+
+    /* aliases so existing rules below pick up the new palette */
+    --bg-soft: var(--bg-deep);
+    --silver-1: var(--ivory);
+    --silver-2: var(--ivory-dim);
+    --silver-3: var(--ivory-faint);
+    --accent: var(--brass);
+    --accent-soft: #9c7a3222;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background: radial-gradient(circle at 20% -10%, #f6f1e6 0%, var(--bg) 45%);
+    color: var(--silver-1);
+    font-family: 'Segoe UI', system-ui, -apple-system, Roboto, sans-serif;
+    min-height: 100vh;
+    padding-bottom: 100px;
+  }
+  header{
+    padding: 22px 18px 16px;
+    position: sticky;
+    top: 0;
+    background: linear-gradient(180deg, var(--bg) 70%, transparent);
+    z-index: 10;
+  }
+  .brand{
+    display:flex;
+    align-items:baseline;
+    gap:10px;
+  }
+  .backup-btn{
+    margin-left: auto;
+    width: 30px; height: 30px;
+    border-radius: 8px;
+    border: 1px solid var(--line);
+    background: var(--panel);
+    color: var(--silver-3);
+    display:flex; align-items:center; justify-content:center;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+  .backup-btn + .backup-btn{
+    margin-left: 0;
+  }
+  .backup-btn svg{ width:15px; height:15px; }
+  .backup-btn:active{ transform: scale(0.92); }
+  .toast{
+    position: fixed;
+    top: 14px;
+    left: 50%;
+    transform: translateX(-50%) translateY(-60px);
+    background: #2a2620;
+    color: #faf9f6;
+    padding: 11px 18px;
+    border-radius: 30px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    z-index: 50;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+    transition: transform 0.25s ease;
+    white-space: nowrap;
+  }
+  .toast.show{
+    transform: translateX(-50%) translateY(0);
+  }
+  .brand .mark{
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--brass-bright), var(--brass-deep));
+    box-shadow: 0 0 10px var(--accent-soft);
+    flex-shrink:0;
+  }
+  h1{
+    font-size: 1.35rem;
+    font-weight: 600;
+    margin: 0;
+    letter-spacing: 0.2px;
+  }
+  .sub{
+    color: var(--silver-3);
+    font-size: 0.82rem;
+    margin: 4px 0 0 20px;
+  }
+  .search-wrap{
+    margin: 16px 18px 6px;
+    position: relative;
+  }
+  .search-wrap input{
+    width: 100%;
+    padding: 14px 16px 14px 42px;
+    font-size: 1rem;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    color: var(--silver-1);
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  .search-wrap input:focus{
+    border-color: var(--accent);
+  }
+  .search-wrap svg{
+    position:absolute;
+    left: 14px; top: 50%;
+    transform: translateY(-50%);
+    width:18px; height:18px;
+    color: var(--silver-3);
+  }
+  .count{
+    margin: 8px 18px 14px;
+    font-size: 0.78rem;
+    color: var(--silver-3);
+  }
+  .list{
+    margin: 0 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .card{
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 12px 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+  }
+  .card-main{
+    display:flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+    flex: 1;
+  }
+  .thumb{
+    width: 52px; height: 52px;
+    border-radius: 10px;
+    object-fit: cover;
+    flex-shrink: 0;
+    border: 1px solid var(--line);
+    background: var(--bg-soft);
+  }
+  .thumb-placeholder{
+    width: 52px; height: 52px;
+    border-radius: 10px;
+    flex-shrink: 0;
+    background: var(--bg-soft);
+    border: 1px solid var(--line);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    color: var(--silver-3);
+  }
+  .thumb-placeholder svg{ width:20px; height:20px; }
+  .card-info{ min-width: 0; }
+  .card .name{
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--silver-1);
+    margin-bottom: 6px;
+    word-break: break-word;
+  }
+  .stats{
+    display:flex;
+    gap: 14px;
+    flex-wrap: wrap;
+  }
+  .stat{
+    font-size: 0.8rem;
+    color: var(--silver-3);
+  }
+  .stat b{
+    color: var(--accent);
+    font-weight: 600;
+  }
+  .card-actions{
+    display:flex;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+  .icon-btn{
+    width: 34px; height: 34px;
+    border-radius: 9px;
+    border: 1px solid var(--line);
+    background: var(--bg-soft);
+    color: var(--silver-2);
+    display:flex; align-items:center; justify-content:center;
+    cursor: pointer;
+  }
+  .icon-btn svg{ width:16px; height:16px; }
+  .icon-btn.danger{ color: var(--danger); }
+  .icon-btn:active{ transform: scale(0.94); }
+
+  .empty{
+    margin: 60px 18px;
+    text-align: center;
+    color: var(--silver-3);
+  }
+  .empty svg{
+    width: 40px; height:40px;
+    margin-bottom: 14px;
+    opacity: 0.5;
+  }
+  .empty p{ margin: 4px 0; font-size: 0.9rem; }
+
+  .fab{
+    position: fixed;
+    bottom: 24px; right: 20px;
+    width: 58px; height: 58px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--brass-bright), var(--brass-deep));
+    color: #fffdf8;
+    border: none;
+    box-shadow: 0 8px 24px rgba(156,122,50,0.4);
+    display:flex; align-items:center; justify-content:center;
+    cursor:pointer;
+    z-index: 20;
+  }
+  .fab svg{ width:26px; height:26px; }
+  .fab:active{ transform: scale(0.93); }
+
+  .sheet-backdrop{
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.55);
+    z-index: 30;
+    display: none;
+    align-items: flex-end;
+  }
+  .sheet-backdrop.open{ display:flex; }
+  .sheet{
+    width: 100%;
+    background: var(--bg-soft);
+    border-radius: 20px 20px 0 0;
+    padding: 22px 20px 28px;
+    border-top: 1px solid var(--line);
+    animation: slideUp 0.22s ease-out;
+    max-height: 88vh;
+    overflow-y: auto;
+  }
+  @keyframes slideUp{
+    from{ transform: translateY(20px); opacity: 0; }
+    to{ transform: translateY(0); opacity: 1; }
+  }
+  .sheet h2{
+    margin: 0 0 18px;
+    font-size: 1.1rem;
+    font-weight: 600;
+  }
+  .field{ margin-bottom: 14px; }
+  .field label{
+    display:block;
+    font-size: 0.78rem;
+    color: var(--silver-3);
+    margin-bottom: 6px;
+  }
+  .field input{
+    width: 100%;
+    padding: 13px 14px;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    color: var(--silver-1);
+    font-size: 1rem;
+    outline: none;
+  }
+  .field input:focus{ border-color: var(--accent); }
+  .field select{
+    width: 100%;
+    padding: 13px 14px;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    color: var(--silver-1);
+    font-size: 1rem;
+    outline: none;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%238a9298' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 14px center;
+  }
+  .field select:focus{ border-color: var(--accent); }
+  .field-row{
+    display:flex;
+    gap: 10px;
+  }
+  .field-row .field{ flex:1; min-width:0; }
+  .sheet-actions{
+    display:flex;
+    gap: 10px;
+    margin-top: 18px;
+  }
+  .btn{
+    flex: 1;
+    padding: 14px;
+    border-radius: 10px;
+    border: none;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .btn-primary{
+    background: var(--accent);
+    color: #1a1a1a;
+  }
+  .btn-secondary{
+    background: var(--panel);
+    color: var(--silver-2);
+    border: 1px solid var(--line);
+  }
+  .btn:active{ transform: scale(0.97); }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">
+    <span class="mark"></span>
+    <h1>Tunch List</h1>
+    <button class="backup-btn" id="restoreBtn" aria-label="Backup file se restore karo">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 9v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4M17 14l-5-5-5 5M12 9v12"></path></svg>
+    </button>
+    <button class="backup-btn" id="backupBtn" aria-label="Backup file download karo">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"></path></svg>
+    </button>
+    <input type="file" id="restoreFileInput" accept="application/json,.json" style="display:none;">
+  </div>
+  <div class="sub" id="subLine">Item dhundo, tunch aur labour turant pata karo</div>
+</header>
+
+<div class="toast" id="toast"></div>
+
+<div class="search-wrap">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+  <input type="text" id="searchInput" placeholder="Item ka naam likho..." autocomplete="off">
+</div>
+
+<div class="count" id="countLabel"></div>
+
+<div class="list" id="list"></div>
+
+<div class="empty" id="emptyState" style="display:none;">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"></path></svg>
+  <p id="emptyTitle">Abhi koi item nahi hai</p>
+  <p>Neeche + button se item add karo</p>
+</div>
+
+<button class="fab" id="addBtn" aria-label="Item add karo">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+</button>
+
+<div class="sheet-backdrop" id="sheetBackdrop">
+  <div class="sheet">
+    <h2 id="sheetTitle">Naya item add karo</h2>
+    <div class="field">
+      <label>Item ka naam</label>
+      <input type="text" id="itemName" placeholder="Jaise: Chain, Kada, Payal...">
+    </div>
+    <div class="field">
+      <label>Item ki photo (optional)</label>
+      <div id="imagePreviewWrap" style="display:none; margin-bottom:10px;">
+        <img id="imagePreview" style="width:100%; max-height:180px; object-fit:cover; border-radius:10px; border:1px solid var(--line);">
+      </div>
+      <label for="itemImageInput" class="btn btn-secondary" style="display:flex; align-items:center; justify-content:center; gap:8px; cursor:pointer;">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>
+        <span id="imageBtnLabel">Photo chuno</span>
+      </label>
+      <input type="file" id="itemImageInput" accept="image/*" style="display:none;">
+    </div>
+    <div class="field-row">
+      <div class="field">
+        <label>Item ka Tunch</label>
+        <input type="text" id="itemTunch" placeholder="Jaise: 92.5" inputmode="decimal">
+      </div>
+      <div class="field">
+        <label>Denge wala Tunch</label>
+        <input type="text" id="itemGiveTunch" placeholder="Jaise: 91" inputmode="decimal">
+      </div>
+    </div>
+    <div class="field">
+      <label>Kam se kam Tunch</label>
+      <input type="text" id="itemMinTunch" placeholder="Jaise: 90" inputmode="decimal">
+    </div>
+    <div class="field">
+      <label>Labour kis hisaab se?</label>
+      <select id="labourType">
+        <option value="piece">Per Piece</option>
+        <option value="gram">Per Gram</option>
+        <option value="none">No Labour</option>
+      </select>
+    </div>
+    <div class="field" id="labourRateField">
+      <label id="labourLabel">Labour Rate (per piece)</label>
+      <input type="text" id="itemLabour" placeholder="Jaise: 150" inputmode="decimal">
+    </div>
+    <div class="sheet-actions">
+      <button class="btn btn-secondary" id="cancelBtn">Cancel</button>
+      <button class="btn btn-primary" id="saveBtn">Save karo</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  const STORAGE_KEY = 'tunch_list_items_v1';
+  const DB_NAME = 'tunch_list_db';
+  const DB_STORE = 'backups';
+  let items = [];
+  let editingId = null;
+  let currentImageData = null;
+  let dbInstance = null;
+
+  function openDB(){
+    return new Promise((resolve, reject) => {
+      if(!('indexedDB' in window)){ resolve(null); return; }
+      const req = indexedDB.open(DB_NAME, 1);
+      req.onupgradeneeded = () => {
+        req.result.createObjectStore(DB_STORE);
+      };
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => resolve(null);
+    });
+  }
+
+  async function saveToIndexedDB(data){
+    try{
+      if(!dbInstance) dbInstance = await openDB();
+      if(!dbInstance) return;
+      const tx = dbInstance.transaction(DB_STORE, 'readwrite');
+      tx.objectStore(DB_STORE).put(JSON.stringify(data), 'latest');
+    }catch(e){ /* silent fail, localStorage is primary */ }
+  }
+
+  function readFromIndexedDB(){
+    return new Promise(async (resolve) => {
+      try{
+        if(!dbInstance) dbInstance = await openDB();
+        if(!dbInstance){ resolve(null); return; }
+        const tx = dbInstance.transaction(DB_STORE, 'readonly');
+        const req = tx.objectStore(DB_STORE).get('latest');
+        req.onsuccess = () => {
+          try{
+            resolve(req.result ? JSON.parse(req.result) : null);
+          }catch(e){ resolve(null); }
+        };
+        req.onerror = () => resolve(null);
+      }catch(e){ resolve(null); }
+    });
+  }
+
+  function showToast(msg){
+    const toast = document.getElementById('toast');
+    toast.textContent = msg;
+    toast.classList.add('show');
+    setTimeout(() => toast.classList.remove('show'), 2200);
+  }
+
+  function downloadBackupFile(silent){
+    try{
+      const blob = new Blob([JSON.stringify(items, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      const dateStr = new Date().toISOString().slice(0,10);
+      a.href = url;
+      a.download = `tunch-list-backup-${dateStr}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      if(!silent) showToast('Backup file download ho gayi');
+    }catch(e){ /* silent fail */ }
+  }
+
+  async function loadItems(){
+    let localData = null;
+    try{
+      const raw = localStorage.getItem(STORAGE_KEY);
+      localData = raw ? JSON.parse(raw) : null;
+    }catch(e){
+      localData = null;
+    }
+
+    if(localData && Array.isArray(localData) && localData.length > 0){
+      items = localData;
+      // keep IndexedDB in sync silently
+      saveToIndexedDB(items);
+      return;
+    }
+
+    // localStorage empty or corrupt — try recovering from IndexedDB
+    const backupData = await readFromIndexedDB();
+    if(backupData && Array.isArray(backupData) && backupData.length > 0){
+      items = backupData;
+      try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(items)); }catch(e){}
+      showToast('Data backup se wapas mil gaya');
+    }else{
+      items = localData && Array.isArray(localData) ? localData : [];
+    }
+  }
+
+  function saveItems(){
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+    saveToIndexedDB(items);
+  }
+
+  function render(){
+    const query = document.getElementById('searchInput').value.trim().toLowerCase();
+    const listEl = document.getElementById('list');
+    const emptyEl = document.getElementById('emptyState');
+    const emptyTitle = document.getElementById('emptyTitle');
+    const countLabel = document.getElementById('countLabel');
+
+    let filtered = items;
+    if(query){
+      filtered = items.filter(it => it.name.toLowerCase().includes(query));
+    }
+
+    filtered = filtered.slice().sort((a,b) => a.name.localeCompare(b.name, 'hi'));
+
+    listEl.innerHTML = '';
+
+    if(filtered.length === 0){
+      emptyEl.style.display = 'block';
+      emptyTitle.textContent = items.length === 0 ? 'Abhi koi item nahi hai' : 'Kuch nahi mila';
+      countLabel.textContent = '';
+      return;
+    }
+
+    emptyEl.style.display = 'none';
+    countLabel.textContent = query ? `${filtered.length} item mila` : `Total ${items.length} item`;
+
+    filtered.forEach(it => {
+      const card = document.createElement('div');
+      card.className = 'card';
+      const thumbHtml = it.image
+        ? `<img class="thumb" src="${it.image}" alt="">`
+        : `<div class="thumb-placeholder"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"></path><circle cx="12" cy="13" r="4"></circle></svg></div>`;
+      const labourHtml = it.labourType === 'none'
+        ? `<span class="stat">Labour: <b>No Labour</b></span>`
+        : `<span class="stat">Labour: <b>${escapeHtml(it.labour || '-')} ${it.labourType === 'gram' ? '/ gram' : '/ piece'}</b></span>`;
+      const minTunchHtml = it.minTunch
+        ? `<span class="stat">Min Tunch: <b>${escapeHtml(it.minTunch)}</b></span>`
+        : '';
+      const giveTunchHtml = it.giveTunch
+        ? `<span class="stat">Denge: <b>${escapeHtml(it.giveTunch)}</b></span>`
+        : '';
+      card.innerHTML = `
+        <div class="card-main">
+          ${thumbHtml}
+          <div class="card-info">
+            <div class="name">${escapeHtml(it.name)}</div>
+            <div class="stats">
+              <span class="stat">Tunch: <b>${escapeHtml(it.tunch || '-')}</b></span>
+              ${giveTunchHtml}
+              ${minTunchHtml}
+              ${labourHtml}
+            </div>
+          </div>
+        </div>
+        <div class="card-actions">
+          <button class="icon-btn" data-action="edit" data-id="${it.id}" aria-label="Edit">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.85 2.83 0 114 4L7.5 20.5 2 22l1.5-5.5z"></path></svg>
+          </button>
+          <button class="icon-btn danger" data-action="delete" data-id="${it.id}" aria-label="Delete">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"></path></svg>
+          </button>
+        </div>
+      `;
+      listEl.appendChild(card);
+    });
+  }
+
+  function escapeHtml(str){
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+  }
+
+  function openSheet(item){
+    editingId = item ? item.id : null;
+    currentImageData = item ? (item.image || null) : null;
+    document.getElementById('sheetTitle').textContent = item ? 'Item edit karo' : 'Naya item add karo';
+    document.getElementById('itemName').value = item ? item.name : '';
+    document.getElementById('itemTunch').value = item ? item.tunch : '';
+    document.getElementById('itemGiveTunch').value = item ? (item.giveTunch || '') : '';
+    document.getElementById('itemMinTunch').value = item ? (item.minTunch || '') : '';
+    document.getElementById('labourType').value = item ? (item.labourType || 'piece') : 'piece';
+    document.getElementById('itemLabour').value = item ? item.labour : '';
+    document.getElementById('itemImageInput').value = '';
+    updateLabourLabel();
+    updateImagePreview();
+    document.getElementById('sheetBackdrop').classList.add('open');
+    setTimeout(() => document.getElementById('itemName').focus(), 100);
+  }
+
+  function updateLabourLabel(){
+    const type = document.getElementById('labourType').value;
+    const label = document.getElementById('labourLabel');
+    const input = document.getElementById('itemLabour');
+    const fieldWrap = document.getElementById('labourRateField');
+    if(type === 'gram'){
+      label.textContent = 'Labour Rate (per gram)';
+      input.placeholder = 'Jaise: 80';
+      fieldWrap.style.display = 'block';
+    }else if(type === 'none'){
+      fieldWrap.style.display = 'none';
+      input.value = '';
+    }else{
+      label.textContent = 'Labour Rate (per piece)';
+      input.placeholder = 'Jaise: 150';
+      fieldWrap.style.display = 'block';
+    }
+  }
+
+  function updateImagePreview(){
+    const wrap = document.getElementById('imagePreviewWrap');
+    const img = document.getElementById('imagePreview');
+    const label = document.getElementById('imageBtnLabel');
+    if(currentImageData){
+      img.src = currentImageData;
+      wrap.style.display = 'block';
+      label.textContent = 'Photo badlo';
+    }else{
+      wrap.style.display = 'none';
+      label.textContent = 'Photo chuno';
+    }
+  }
+
+  function handleImageFile(file){
+    if(!file) return;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        // Resize/compress so localStorage doesn't fill up
+        const maxDim = 500;
+        let { width, height } = img;
+        if(width > height && width > maxDim){
+          height = Math.round(height * (maxDim / width));
+          width = maxDim;
+        }else if(height > maxDim){
+          width = Math.round(width * (maxDim / height));
+          height = maxDim;
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, width, height);
+        currentImageData = canvas.toDataURL('image/jpeg', 0.7);
+        updateImagePreview();
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function closeSheet(){
+    document.getElementById('sheetBackdrop').classList.remove('open');
+    editingId = null;
+    currentImageData = null;
+  }
+
+  function saveItem(){
+    const name = document.getElementById('itemName').value.trim();
+    const tunch = document.getElementById('itemTunch').value.trim();
+    const giveTunch = document.getElementById('itemGiveTunch').value.trim();
+    const minTunch = document.getElementById('itemMinTunch').value.trim();
+    const labourType = document.getElementById('labourType').value;
+    const labour = document.getElementById('itemLabour').value.trim();
+
+    if(!name){
+      document.getElementById('itemName').focus();
+      return;
+    }
+
+    if(editingId){
+      const idx = items.findIndex(it => it.id === editingId);
+      if(idx !== -1){
+        items[idx] = { ...items[idx], name, tunch, giveTunch, minTunch, labourType, labour, image: currentImageData };
+      }
+    }else{
+      items.push({
+        id: Date.now().toString(36) + Math.random().toString(36).slice(2),
+        name, tunch, giveTunch, minTunch, labourType, labour, image: currentImageData
+      });
+    }
+
+    try{
+      saveItems();
+    }catch(e){
+      alert('Storage full ho gaya hai, image ke bina save kar rahe hain.');
+      if(editingId){
+        const idx = items.findIndex(it => it.id === editingId);
+        if(idx !== -1) items[idx].image = null;
+      }else{
+        items[items.length - 1].image = null;
+      }
+      saveItems();
+    }
+    markChanged();
+    closeSheet();
+    render();
+  }
+
+  function deleteItem(id){
+    items = items.filter(it => it.id !== id);
+    saveItems();
+    render();
+  }
+
+  document.getElementById('labourType').addEventListener('change', updateLabourLabel);
+  document.getElementById('itemImageInput').addEventListener('change', (e) => {
+    const file = e.target.files && e.target.files[0];
+    if(file) handleImageFile(file);
+  });
+  document.getElementById('searchInput').addEventListener('input', render);
+  document.getElementById('addBtn').addEventListener('click', () => openSheet(null));
+  document.getElementById('cancelBtn').addEventListener('click', closeSheet);
+  document.getElementById('saveBtn').addEventListener('click', saveItem);
+  document.getElementById('sheetBackdrop').addEventListener('click', (e) => {
+    if(e.target.id === 'sheetBackdrop') closeSheet();
+  });
+
+  document.getElementById('backupBtn').addEventListener('click', () => {
+    if(items.length === 0){
+      showToast('Pehle koi item add karo');
+      return;
+    }
+    downloadBackupFile(false);
+  });
+
+  document.getElementById('restoreBtn').addEventListener('click', () => {
+    document.getElementById('restoreFileInput').click();
+  });
+
+  document.getElementById('restoreFileInput').addEventListener('change', (e) => {
+    const file = e.target.files && e.target.files[0];
+    if(!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      let parsed;
+      try{
+        parsed = JSON.parse(ev.target.result);
+      }catch(err){
+        alert('Yeh file sahi backup file nahi hai. JSON file chuno jo pehle download ki thi.');
+        e.target.value = '';
+        return;
+      }
+      if(!Array.isArray(parsed)){
+        alert('Yeh file sahi backup file nahi hai.');
+        e.target.value = '';
+        return;
+      }
+      const proceed = items.length > 0
+        ? confirm(`Is file mein ${parsed.length} item hain. Yeh aapki abhi ki list (${items.length} item) ko replace kar denge. Aage badhein?`)
+        : true;
+      if(!proceed){
+        e.target.value = '';
+        return;
+      }
+      items = parsed;
+      saveItems();
+      render();
+      showToast(`${items.length} item restore ho gaye`);
+      e.target.value = '';
+    };
+    reader.onerror = () => {
+      alert('File read nahi ho payi, dobara try karein.');
+      e.target.value = '';
+    };
+    reader.readAsText(file);
+  });
+
+  // Auto-backup: jab bhi user app se nikle (tab switch, app minimize, ya band kare),
+  // agar items hain aur is session mein kuch add/edit/delete hua hai, to silently
+  // ek backup file download ho jaati hai. IndexedDB save har change pe already ho raha hai.
+  let hasUnsavedChanges = false;
+  function markChanged(){ hasUnsavedChanges = true; }
+
+  function autoBackupOnExit(){
+    if(hasUnsavedChanges && items.length > 0){
+      downloadBackupFile(true);
+      hasUnsavedChanges = false;
+    }
+  }
+
+  document.addEventListener('visibilitychange', () => {
+    if(document.visibilityState === 'hidden'){
+      autoBackupOnExit();
+    }
+  });
+  window.addEventListener('pagehide', autoBackupOnExit);
+
+  document.getElementById('list').addEventListener('click', (e) => {
+    const btn = e.target.closest('.icon-btn');
+    if(!btn) return;
+    const id = btn.dataset.id;
+    const action = btn.dataset.action;
+    if(action === 'edit'){
+      const item = items.find(it => it.id === id);
+      if(item) openSheet(item);
+    }else if(action === 'delete'){
+      if(confirm('Yeh item delete karna hai?')){
+        deleteItem(id);
+        markChanged();
+      }
+    }
+  });
+
+  (async () => {
+    await loadItems();
+    render();
+  })();
+</script>
+
+</body>
+</html>
